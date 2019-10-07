@@ -12,9 +12,9 @@ pip install selenium
 **Download ChromeDriver and put it into project dir [Chrome Web Driver](http://chromedriver.chromium.org/downloads).**   
 
 ### How to Run
-Use `group_scraper.py` to collect the group or page data. 
+Use `post_scraper.py` to collect the group or page data. 
 ```
-usage: group_scraper.py [-h] [--pages PAGES [PAGES ...]] [--groups GROUPS [GROUPS ...]][-d DEPTH]
+usage: group_scraper.py [-h] [--page PAGES [PAGES ...]] [--group GROUPS [GROUPS ...]][-d DEPTH]
 Data Collection
 arguments:
   -h, --help            show this help message and exit
@@ -30,7 +30,7 @@ arguments:
                         How many recent posts you want to gather in
                         multiples of (roughly) 8.
 ```
-Example: ```python group_scraper.py -g groupname -d 20```
+Example: ```python post_scraper.py -g groupname -d 20```
 ____
 The output is `posts.csv` inside the script folder.
 
