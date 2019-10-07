@@ -178,6 +178,7 @@ class CollectPosts(object):
         self.browser.get(url)
 
         lastCount = -1
+        contCount = 5
         match = False
         lenOfPage = self.browser.execute_script(
             "window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
@@ -192,8 +193,12 @@ class CollectPosts(object):
             except:
                 pass
             print("Number Of Scrolls Needed " + str(lenOfPage))
-            if lastCount == lenOfPage:
+            if lastCount == lenOfPage and contCount > 0:
+                contCount -= 1
+            elif lastCount == lenOfPage:
                 match = True
+            if contCount < 5 and lastCount != lenOfPage:
+                contCount = 5
 
         moreComments = self.browser.find_elements_by_xpath(
             '//a[@data-testid="UFI2CommentsPagerRenderer/pager_depth_0"]')
@@ -272,14 +277,14 @@ class CollectPosts(object):
 
 if __name__ == "__main__":
 
-    with open('credentials.txt') as f:
-        email = f.readline().split('"')[1]
-        password = f.readline().split('"')[1]
-
-        if email == "" or password == "":
-            print(
-                "Your email or password is missing. Kindly write them in credentials.txt")
-            exit()
+    # with open('credentials.txt') as f:
+    #     email = f.readline().split('"')[1]
+    #     password = f.readline().split('"')[1]
+    #
+    #     if email == "" or password == "":
+    #         print(
+    #             "Your email or password is missing. Kindly write them in credentials.txt")
+    #         exit()
 
     try:
         if args.group:
