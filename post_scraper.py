@@ -177,43 +177,49 @@ class CollectPosts(object):
         # navigate to page
         self.browser.get(url)
 
-        lastCount = -1
-        contCount = 5
-        match = False
-        lenOfPage = self.browser.execute_script(
-            "window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
-        while not match:
-            lastCount = lenOfPage
-            time.sleep(self.delay)
+        try:
+            lastCount = -1
+            contCount = 5
+            match = False
             lenOfPage = self.browser.execute_script(
-                "window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return "
-                "lenOfPage;")
-            try:
-                self.browser.find_element_by_xpath('//a[@id="expanding_cta_close_button"]').click()
-            except:
-                pass
-            print("Number Of Scrolls Needed " + str(lenOfPage))
-            if lastCount == lenOfPage and contCount > 0:
-                contCount -= 1
-            elif lastCount == lenOfPage:
-                match = True
-            if contCount < 5 and lastCount != lenOfPage:
-                contCount = 5
-
-        moreComments = self.browser.find_elements_by_xpath(
-            '//a[@data-testid="UFI2CommentsPagerRenderer/pager_depth_0"]')
-        print("Scrolling through to click on more comments:" + str(len(moreComments)))
-        while len(moreComments) != 0:
-            for moreComment in moreComments:
-                action = webdriver.common.action_chains.ActionChains(self.browser)
+                "window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return lenOfPage;")
+            while not match:
+                lastCount = lenOfPage
+                time.sleep(self.delay)
+                lenOfPage = self.browser.execute_script(
+                    "window.scrollTo(0, document.body.scrollHeight);var lenOfPage=document.body.scrollHeight;return "
+                    "lenOfPage;")
                 try:
-                    # move to where the comment button is
-                    action.move_to_element_with_offset(moreComment, 1, 1)
-                    action.perform()
-                    moreComment.click()
+                    self.browser.find_element_by_xpath('//a[@id="expanding_cta_close_button"]').click()
                 except:
                     pass
-            moreComments = []
+                print("Number Of Scrolls Needed " + str(lenOfPage))
+                if lastCount == lenOfPage and contCount > 0:
+                    contCount -= 1
+                elif lastCount == lenOfPage:
+                    match = True
+                if contCount < 5 and lastCount != lenOfPage:
+                    contCount = 5
+        except:
+            pass
+
+        try:
+            moreComments = self.browser.find_elements_by_xpath(
+                '//a[@data-testid="UFI2CommentsPagerRenderer/pager_depth_0"]')
+            print("Scrolling through to click on more comments:" + str(len(moreComments)))
+            while len(moreComments) != 0:
+                for moreComment in moreComments:
+                    action = webdriver.common.action_chains.ActionChains(self.browser)
+                    try:
+                        # move to where the comment button is
+                        action.move_to_element_with_offset(moreComment, 1, 1)
+                        action.perform()
+                        moreComment.click()
+                    except:
+                        pass
+                moreComments = []
+        except:
+            pass
 
         # Now that the page is fully scrolled, grab the source code.
         source_data = self.browser.page_source
