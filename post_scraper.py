@@ -167,6 +167,7 @@ class CollectPosts(object):
                         comment_post.append("")
                     comment_post.append("")
                     post.append(comment_post)
+
             except Exception as e:
                 print(e)
 

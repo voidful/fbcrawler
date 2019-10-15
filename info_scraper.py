@@ -4,6 +4,9 @@ import platform
 import sys
 import urllib.request
 import time
+import csv
+import re
+from bs4 import BeautifulSoup as bs
 
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
@@ -197,84 +200,133 @@ def get_time(x):
         return time
 
 
+def fatch_fbid(str):
+    have_fbid = re.search(re.compile(r"\&id=(\d+)"), str)
+    if have_fbid:
+        fbid = have_fbid.groups()[0]
+        return fbid
+
+    have_fbid = re.search(re.compile(r"\?id=(\d+)"), str)
+    if have_fbid:
+        fbid = have_fbid.groups()[0]
+        return fbid
+
+    have_fbid = re.search(re.compile(r"\/(\d+)\/"), str)
+    if have_fbid:
+        fbid = have_fbid.groups()[0]
+        return fbid
+
+    return None
+
+
 def extract_and_write_posts(elements, filename):
     try:
-        f = open(filename, "w", newline='\r\n')
-        f.writelines(' TIME || TYPE  || TITLE || STATUS  ||   LINKS(Shared Posts/Shared Links etc) ' + '\n' + '\n')
+        with open(filename, "w", newline='', encoding="utf-8") as save_file:
+            writer = csv.writer(save_file)
 
-        for x in elements:
-            try:
-                video_link = " "
-                title = " "
-                status = " "
-                link = ""
-                img = " "
-                time = " "
-
-                # time
-                time = get_time(x)
-
-                # title
-                title = get_title(x)
-                if title.text.find("shared a memory") != -1:
-                    x = x.find_element_by_xpath(".//div[@class='_1dwg _1w_m']")
-                    title = get_title(x)
-
-                status = get_status(x)
-                if title.text == driver.find_element_by_id("fb-timeline-cover-name").text:
-                    if status == '':
-                        temp = get_div_links(x, "img")
-                        if temp == '':  # no image tag which means . it is not a life event
-                            link = get_div_links(x, "a").get_attribute('href')
-                            type = "status update without text"
-                        else:
-                            type = 'life event'
-                            link = get_div_links(x, "a").get_attribute('href')
-                            status = get_div_links(x, "a").text
-                    else:
-                        type = "status update"
-                        if get_div_links(x, "a") != '':
-                            link = get_div_links(x, "a").get_attribute('href')
-
-                elif title.text.find(" shared ") != -1:
-
-                    x1, link = get_title_links(title)
-                    type = "shared " + x1
-
-                elif title.text.find(" at ") != -1 or title.text.find(" in ") != -1:
-                    if title.text.find(" at ") != -1:
-                        x1, link = get_title_links(title)
-                        type = "check in"
-                    elif title.text.find(" in ") != 1:
-                        status = get_div_links(x, "a").text
-
-                elif title.text.find(" added ") != -1 and title.text.find("photo") != -1:
-                    type = "added photo"
-                    link = get_div_links(x, "a").get_attribute('href')
-
-                elif title.text.find(" added ") != -1 and title.text.find("video") != -1:
-                    type = "added video"
-                    link = get_div_links(x, "a").get_attribute('href')
-
-                else:
-                    type = "others"
-
-                if not isinstance(title, str):
-                    title = title.text
-
-                status = status.replace("\n", " ")
-                title = title.replace("\n", " ")
-
-                line = str(time) + " || " + str(type) + ' || ' + str(title) + ' || ' + str(status) + ' || ' + str(
-                    link) + "\n"
-
+            for x in elements:
                 try:
-                    f.writelines(line)
-                except:
-                    print('Posts: Could not map encoded characters')
-            except:
-                pass
-        f.close()
+                    video_link = " "
+                    title = " "
+                    status = " "
+                    link = ""
+                    img = " "
+                    time = " "
+                    content = ""
+
+                    # time
+                    time = get_time(x)
+
+                    # title
+                    title = get_title(x)
+                    if title.text.find("shared a memory") != -1:
+                        x = x.find_element_by_xpath(".//div[@class='_1dwg _1w_m']")
+                        title = get_title(x)
+
+                    status = get_status(x)
+                    if title.text == driver.find_element_by_id("fb-timeline-cover-name").text:
+                        if status == '':
+                            temp = get_div_links(x, "img")
+                            if temp == '':  # no image tag which means . it is not a life event
+                                link = get_div_links(x, "a").get_attribute('href')
+                                type = "status update without text"
+                            else:
+                                type = 'life event'
+                                link = get_div_links(x, "a").get_attribute('href')
+                                status = get_div_links(x, "a").text
+                        else:
+                            type = "status update"
+                            if get_div_links(x, "a") != '':
+                                link = get_div_links(x, "a").get_attribute('href')
+
+                    elif title.text.find(" shared ") != -1:
+
+                        x1, link = get_title_links(title)
+                        type = "shared " + x1
+
+                    elif title.text.find(" at ") != -1 or title.text.find(" in ") != -1:
+                        if title.text.find(" at ") != -1:
+                            x1, link = get_title_links(title)
+                            type = "check in"
+                        elif title.text.find(" in ") != 1:
+                            status = get_div_links(x, "a").text
+
+                    elif title.text.find(" added ") != -1 and title.text.find("photo") != -1:
+                        type = "added photo"
+                        link = get_div_links(x, "a").get_attribute('href')
+
+                    elif title.text.find(" added ") != -1 and title.text.find("video") != -1:
+                        type = "added video"
+                        link = get_div_links(x, "a").get_attribute('href')
+
+                    else:
+                        type = "others"
+
+                    x = bs(x.get_attribute('innerHTML'), 'html.parser')
+                    # Post Text
+                    actualPosts = x.find_all(attrs={"data-testid": "post_message"})
+                    for posts in actualPosts:
+                        paragraphs = posts.find_all('p')
+                        text = ""
+                        for index in range(0, len(paragraphs)):
+                            content += paragraphs[index].text
+
+                    if not isinstance(title, str):
+                        title = title.text
+
+                    status = status.replace("\n", " ")
+                    title = title.replace("\n", " ")
+
+                    # line = str(time) + " || " + str(type) + ' || ' + str(title) + ' || ' + str(status) + ' || ' + str(
+                    #     link) + "\n"
+                    writer.writerow([str(title), "", str(time), content, "", str(link)])
+                    try:
+                        postComments = x.find_all(attrs={"data-testid": "UFI2Comment/root_depth_0"})
+                        for comment in postComments:
+                            if comment.find(class_="_6qw4") is None:
+                                continue
+                            commenter = comment.find(class_="_6qw4").text
+                            time = get_time(comment)
+                            # Post Id
+                            id = fatch_fbid(comment.find(class_="_ohe lfloat").find("a").get('data-hovercard'))
+                            comment_text = comment.find("span", class_="_3l3x")
+                            if comment_text is not None:
+                                comment_text = comment_text.text
+                            else:
+                                comment_text = " "
+                            comment_link = comment.find(class_="_ns_")
+                            if comment_link is not None:
+                                comment_link = comment_link.get("href")
+                            else:
+                                comment_link = " "
+                            writer.writerow(
+                                ["", commenter + ":" + id, str(time), "", comment_text, comment_link])
+                    except Exception as e:
+                        print(e)
+                        print('Posts: Could not map encoded characters')
+                except Exception as e:
+                    print(e)
+                    pass
     except:
         print("Exception (extract_and_write_posts)", "Status =", sys.exc_info()[0])
 
@@ -586,7 +638,7 @@ def scrap_profile(ids):
         scrape_data(id, scan_list, section, elements_path, save_status, file_names)
         print("About Section Done!")
 
-        # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
         print("----------------------------------------")
         print("Posts:")
         # setting parameters for scrape_data() to scrap posts
@@ -594,7 +646,7 @@ def scrap_profile(ids):
         section = []
         elements_path = ['//div[@class="_5pcb _4b0l _2q8l"]']
 
-        file_names = ["Posts.txt"]
+        file_names = ["Posts.csv"]
         save_status = 4
 
         scrape_data(id, scan_list, section, elements_path, save_status, file_names)
