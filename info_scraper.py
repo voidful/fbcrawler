@@ -181,8 +181,7 @@ def get_title(x):
                 title = x.find_element_by_xpath(".//span[@class='fwn fcg']")
             except:
                 pass
-    finally:
-        return title
+    return title
 
 
 def get_time(x):
@@ -196,8 +195,7 @@ def get_time(x):
     except:
         pass
 
-    finally:
-        return time
+    return time
 
 
 def fatch_fbid(str):
